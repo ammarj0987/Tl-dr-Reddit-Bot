@@ -6,11 +6,24 @@ import keys
 
 # If a post is bigger than postLength limit, summarize it.
 postLength = 2500
+# list of subreddits that the bot will run on.
+subreddits = ["AmItheAsshole", "relationship_advice"]
+
+# checks if the post is not a pinned post and does not have tldr already
+def validPost(post):
+    if len(post.selftext) < postLength or post.stickied == True:
+        return False
+    lowered = post.selftext.lower()
+    words = lowered.split()
+    length = len(words)
+    for i in reversed[length]:
+        if "tldr" in words[i] or "tl;dr" in words[i]:
+            return False
+    return True
 
 # text: text in the post waiting to be summarized
 # returns a summarized response from openAI
 def getResponse(text):
-    # Load your API key from an environment variable or secret management service
     openai.api_key = keys.API_KEY
     myPrompt = text + " Tl;dr"
     response = openai.Completion.create(
@@ -45,17 +58,13 @@ reddit = praw.Reddit(
     password =keys.PASSWORD
 )
 
-# connect to subreddit
-subreddit = reddit.subreddit("AmItheAsshole")
-for post in subreddit.hot(limit=10):
-    if (len(post.selftext) > postLength):
-        # print(post.title)
-        # print(post.selftext)
-        # print(len(post.selftext))
-        print("---------------------------")
-        res = getResponse(post.selftext)
-        comment = processText(res)
-        print(comment)
+# connect to subreddits
+for subreddit in subreddits:
+    for post in subreddit.hot(limit=10):
+        if (validPost()):
+            res = getResponse(post.selftext)
+            comment = processText(res)
+            post.reply(comment)
 
-    # sleep for 11 minutes after commenting
-    #time.sleep(660)
+        #sleep for 11 minutes after commenting
+        time.sleep(660)
