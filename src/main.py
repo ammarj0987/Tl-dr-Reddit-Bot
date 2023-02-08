@@ -3,7 +3,8 @@ import praw
 import os
 import openai
 import keys
-from transformers import pipeline
+import requests
+import json
 
 # If a post is bigger than postLength limit, summarize it.
 postLength = 2500
@@ -45,19 +46,24 @@ def openAI(text):
 
 # get summary from inference API
 def huggingface(text):
-    summarizer = pipeline("summarization", model="philschmid/bart-large-cnn-samsum")
-    return summarizer(text)
+    ret = ""
+    API_URL = "https://api-inference.huggingface.co/models/philschmid/bart-large-cnn-samsum"
+    headers = {"Authorization": f"Bearer {keys.API_TOKEN}"}
+    response = requests.post(API_URL, headers=headers, json=json.dumps(text))
+    ret = json.dumps(response.json())
+    return ret
+        
 
 # text: AI summary
 # returns a clean and readable comment
-def processText(text):
+def processReply(reply):
     retText = ""
     index = 0
-    for i in range (len(text)):
-        if (text[i].isalpha()):
+    for i in range (len(reply)):
+        if (reply[i].isalpha()):
             index = i
             break
-    retText  = text[index:]
+    retText  = reply[index:]
     return retText
 
 def connectReddit():
@@ -75,7 +81,7 @@ def connectReddit():
         for post in reddit.subreddit(i).hot(limit=10):
             if (validPost(post)):
                 res = getResponse(post.selftext, "hugggingface")
-                comment = processText(res)
+                comment = processReply(res)
                 #post.reply(comment)
                 print(comment)
 
