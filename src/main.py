@@ -1,6 +1,5 @@
 import time
 import praw
-import os
 import openai
 import keys
 import requests
@@ -14,13 +13,12 @@ This is the main file that connects to reddit and replies to posts sorting by ne
 POST_LENGTH = 2500
 
 # list of subreddits that the bot will run on.
-SUBREDDITS = ["AmItheAsshole", "relationship_advice"]
+SUBREDDITS = [""]
 
 # choose model
-MODEL = "huggingface"
+MODEL = ""
 
 # connect to huggingface model
-API_URL = "https://api-inference.huggingface.co/models/philschmid/bart-large-cnn-samsum"
 headers = {"Authorization": f"Bearer {keys.API_TOKEN}"}
 
 # connect to openAI model
@@ -68,13 +66,16 @@ def huggingface(text):
 # text: AI summary
 # returns a clean and readable comment
 def processReply(reply):
-    index = 0
-    for i in range (len(reply)):
-        if (reply[i].isalpha()):
-            index = i
-            break
-    retText  = reply[index:]
-    return retText
+    retText = reply
+    if MODEL == "openAI":
+        index = 0
+        for i in range (len(reply)):
+            if (reply[i].isalpha()):
+                index = i
+                break
+        retText  = reply[index:]
+    outro = "\n*I am a bot and this is my summary of this post.*"
+    return retText + outro
 
 def main():
     # conenct to reddit
@@ -88,18 +89,19 @@ def main():
 
     # connect to subreddits
     for i in SUBREDDITS:
-        for post in reddit.subreddit(i).new(limit=10):
+        for post in reddit.subreddit(i).new(limit=5):
             if (validPost(post)):
                 res = getResponse(post.selftext, MODEL)
                 if (MODEL == "openAI"):
                     comment = processReply(res)
                 else:
                     comment = res
-                #post.reply(comment)
-                print(comment)
+                post.reply(comment)
+                print(post.title)
+                print("--------------------------------")
 
-            # sleep for 11 minutes after commenting
-            #time.sleep(660)
+                # sleep for 11 minutes after commenting
+                time.sleep(660)
 
 if __name__=="__main__":
     main()
